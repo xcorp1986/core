@@ -133,11 +133,42 @@ class Checksum extends Wrapper {
 	}
 
 	/**
+	 * Remove .path extension from a file path
+	 * @param string $path Path that may identify a .part file
+	 * @return string File path without .part extension
+	 */
+	private function stripPartialFileExtension($path) {
+		$extension = pathinfo($path, PATHINFO_EXTENSION);
+
+		if ( $extension === 'part') {
+
+			$newLength = strlen($path) - 5; // 5 = strlen(".part")
+			$fPath = substr($path, 0, $newLength);
+
+			// if path also contains a transaction id, we remove it too
+			$extension = pathinfo($fPath, PATHINFO_EXTENSION);
+			if(substr($extension, 0, 12) === 'ocTransferId') { // 12 = strlen("ocTransferId")
+				$newLength = strlen($fPath) - strlen($extension) -1;
+				$fPath = substr($fPath, 0, $newLength);
+			}
+			return $fPath;
+
+		} else {
+			return $path;
+		}
+	}
+
+	/**
+	 * Make checksums available for part files and the original file for which part file has been created
 	 * @return bool
 	 */
 	public function stream_close() {
 		$currentPath = $this->getPathFromStreamContext();
-		self::$checksums[$currentPath] = $this->finalizeHashingContexts();
+		$originalFilePath = $this->stripPartialFileExtension($currentPath);
+		
+		$checksum = $this->finalizeHashingContexts();
+		self::$checksums[$currentPath] = $checksum;
+		self::$checksums[$originalFilePath] = $checksum;
 
 		return parent::stream_close();
 	}

@@ -209,6 +209,10 @@ class File extends Node implements IFile {
 				throw new FileLocked($e->getMessage(), $e->getCode(), $e);
 			}
 
+			if ($view) {
+				$this->emitPostHooks($exists);
+			}
+			
 			// allow sync clients to send the mtime along in a header
 			$request = \OC::$server->getRequest();
 			if (isset($request->server['HTTP_X_OC_MTIME'])) {
@@ -217,23 +221,7 @@ class File extends Node implements IFile {
 				}
 			}
 			
-			if ($view) {
-				$this->emitPostHooks($exists);
-			}
-			
 			$this->refreshInfo();
-
-			$meta = $partStorage->getMetaData($internalPartPath);
-
-			if (isset($meta['checksum'])) {
-				$this->fileView->putFileInfo(
-					$this->path,
-					['checksum' => $meta['checksum']]
-				);
-			}
-
-			$this->refreshInfo();
-
 		} catch (StorageNotAvailableException $e) {
 			throw new ServiceUnavailable("Failed to check file size: " . $e->getMessage());
 		}
