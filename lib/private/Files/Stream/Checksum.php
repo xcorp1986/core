@@ -163,12 +163,15 @@ class Checksum extends Wrapper {
 	 * @return bool
 	 */
 	public function stream_close() {
-		$currentPath = $this->getPathFromStreamContext();
-		$originalFilePath = $this->stripPartialFileExtension($currentPath);
-		
 		$checksum = $this->finalizeHashingContexts();
+		$currentPath = $this->getPathFromStreamContext();
 		self::$checksums[$currentPath] = $checksum;
-		self::$checksums[$originalFilePath] = $checksum;
+
+		$originalFilePath = $this->stripPartialFileExtension($currentPath);
+		if ($originalFilePath !== $currentPath){
+			// This $path belongs to part file, save checksum for original file
+			self::$checksums[$originalFilePath] = $checksum;
+		}
 
 		return parent::stream_close();
 	}
